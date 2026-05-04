@@ -1,10 +1,5 @@
 import Link from "next/link";
-
-const checks = [
-  "Google Sheet 連線狀態",
-  "OpenAI API 測試",
-  "環境變數檢查結果",
-];
+import { SettingsPanel } from "./settings-panel";
 
 export default function SettingsPage() {
   return (
@@ -23,19 +18,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div className="grid gap-3">
-          {checks.map((check) => (
-            <div
-              className="flex items-center justify-between rounded-lg border border-stone-200 bg-white p-4 shadow-sm"
-              key={check}
-            >
-              <span className="font-semibold text-stone-800">{check}</span>
-              <span className="rounded-lg bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-600">
-                尚未設定
-              </span>
-            </div>
-          ))}
-        </div>
+        <SettingsPanel />
 
         <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-bold text-stone-950">iPhone PWA 安裝</h2>
