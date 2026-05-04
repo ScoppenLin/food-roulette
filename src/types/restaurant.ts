@@ -108,3 +108,59 @@ export interface ParsedRestaurantInput {
   suitableForHints: string[];
   tagHints: string[];
 }
+
+export interface EnrichRestaurantInput {
+  restaurantName: string;
+  countryHint: string;
+  cityHint: string;
+  districtHint: string;
+  googleMapsUrl: string;
+  originalInput: string;
+}
+
+export interface RestaurantCandidate {
+  name: string;
+  country: string;
+  city: string;
+  district: string;
+  address: string;
+  mapUrl: string;
+}
+
+export interface EnrichedRestaurant {
+  name: string;
+  country: string;
+  city: string;
+  district: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+  cuisine: string;
+  priceLevel: string;
+  currency: string;
+  tags: string[];
+  suitableFor: string[];
+  mealTime: string[];
+  openingHoursRaw: string;
+  openingHoursStructured: Record<string, OpeningHoursPeriod[]>;
+  todayOpenStatus: TodayOpenStatus;
+  nextOpenTime: string;
+  businessStatus: BusinessStatus;
+  businessStatusLastChecked: string;
+  mapUrl: string;
+  originalMapUrl: string;
+  googlePlaceId: string;
+  phone: string;
+  websiteUrl: string;
+  aiSummary: string;
+  aiConfidence: AIConfidence;
+  sourceUrls: string[];
+}
+
+export type EnrichRestaurantResult =
+  | EnrichedRestaurant
+  | {
+      candidates: RestaurantCandidate[];
+      needsUserSelection: true;
+    };
