@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
   AIConfidence,
   BusinessStatus,
@@ -51,41 +51,31 @@ export function RestaurantList() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadRestaurants = useCallback(async () => {
+    setIsLoading(true);
 
-    async function loadRestaurants() {
-      try {
-        const response = await fetch("/api/restaurants");
-        const payload = (await response.json()) as RestaurantsResponse;
+    try {
+      const response = await fetch("/api/restaurants");
+      const payload = (await response.json()) as RestaurantsResponse;
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "讀取餐廳清單失敗");
-        }
-
-        if (isMounted) {
-          setRestaurants(payload.restaurants ?? []);
-          setErrorMessage("");
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(
-            error instanceof Error ? error.message : "讀取餐廳清單失敗",
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      if (!response.ok) {
+        throw new Error(payload.error ?? "讀取餐廳清單失敗");
       }
+
+      setRestaurants(payload.restaurants ?? []);
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "讀取餐廳清單失敗",
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    loadRestaurants();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
+
+  useEffect(() => {
+    loadRestaurants();
+  }, [loadRestaurants]);
 
   if (isLoading) {
     return (
@@ -117,17 +107,67 @@ export function RestaurantList() {
   return (
     <div className="grid gap-4">
       {restaurants.map((restaurant) => (
-        <RestaurantCard key={restaurant.id || restaurant.name} restaurant={restaurant} />
+        <RestaurantCard
+          key={restaurant.id || restaurant.name}
+          onRefreshDone={loadRestaurants}
+          restaurant={restaurant}
+        />
       ))}
     </div>
   );
 }
 
-function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
+function RestaurantCard({
+  onRefreshDone,
+  restaurant,
+}: {
+  onRefreshDone: () => Promise<void>;
+  restaurant: Restaurant;
+}) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState("");
   const location = [restaurant.country, restaurant.city, restaurant.district]
     .filter(Boolean)
     .join(" / ");
   const tags = restaurant.tags.slice(0, 4);
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    setRefreshMessage("");
+
+    try {
+      const response = await fetch("/api/refresh-restaurant", {
+        body: JSON.stringify({ restaurantId: restaurant.id }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const payload = (await response.json()) as {
+        error?: string;
+        needsUserSelection?: boolean;
+        ok?: boolean;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "重新檢查失敗");
+      }
+
+      if (payload.needsUserSelection) {
+        setRefreshMessage("AI 找到多個可能結果，暫時沒有更新。");
+        return;
+      }
+
+      setRefreshMessage("已重新檢查並更新。");
+      await onRefreshDone();
+    } catch (error) {
+      setRefreshMessage(
+        error instanceof Error ? error.message : "重新檢查失敗",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   return (
     <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -170,7 +210,10 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-        <InfoItem label="LastVisited" value={restaurant.lastVisited || "尚未記錄"} />
+        <InfoItem
+          label="LastVisited"
+          value={restaurant.lastVisited || "尚未記錄"}
+        />
         <InfoItem label="VisitCount" value={restaurant.visitCount.toString()} />
       </dl>
 
@@ -194,12 +237,20 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
           </button>
         )}
         <button
-          className="min-h-11 flex-1 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50"
+          className="min-h-11 flex-1 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
+          disabled={isRefreshing}
+          onClick={handleRefresh}
           type="button"
         >
-          重新用 AI 檢查
+          {isRefreshing ? "檢查中..." : "重新用 AI 檢查"}
         </button>
       </div>
+
+      {refreshMessage ? (
+        <p className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-semibold text-stone-700">
+          {refreshMessage}
+        </p>
+      ) : null}
     </article>
   );
 }
