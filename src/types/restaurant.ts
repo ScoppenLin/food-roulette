@@ -94,3 +94,17 @@ export interface Restaurant {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ParsedRestaurantInput {
+  restaurantName: string;
+  countryHint: string;
+  cityHint: string;
+  districtHint: string;
+  googleMapsUrl: string;
+  sourceType: SourceType;
+  sourceName: string;
+  sourceNote: string;
+  sourceReliability: number;
+  suitableForHints: string[];
+  tagHints: string[];
+}
