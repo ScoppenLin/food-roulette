@@ -3,6 +3,7 @@ import { appendRestaurant, getRestaurants } from "@/lib/googleSheets";
 import type {
   EnrichedRestaurant,
   InputType,
+  OpeningHoursPeriod,
   ParsedRestaurantInput,
   Restaurant,
 } from "@/types/restaurant";
@@ -226,9 +227,9 @@ function toStringArray(value: unknown): string[] {
 
 function toOpeningHoursStructured(
   value: unknown,
-): Restaurant["openingHoursStructured"] {
+): Record<string, OpeningHoursPeriod[]> {
   return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Restaurant["openingHoursStructured"])
+    ? (value as Record<string, OpeningHoursPeriod[]>)
     : {};
 }
 
