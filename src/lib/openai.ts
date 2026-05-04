@@ -124,14 +124,15 @@ function buildParseRestaurantInputPrompt({
 規則：
 1. 使用者可能輸入中文、英文、日文或其他語言。
 2. 不要自己補查資料，只解析輸入句子本身。
-3. 如果使用者沒有提到資料來源，sourceType = "Neutral"，sourceReliability = 3。
-4. 如果提到朋友推薦，sourceType = "FriendRecommended"，sourceReliability = 4。
-5. 如果提到自己吃過，sourceType = "SelfVisited"，sourceReliability = 5。
-6. 如果提到 IG、短影音、社群看到，sourceType = "IGRecommended"，sourceReliability = 2。
-7. 如果提到客戶、商務場合，sourceType 可判斷為 "CustomerMeal" 或 "BusinessContact"。
-8. sourceType 只能是以下其中一個：
+3. restaurantName 只放餐廳名稱，不要把國家、城市或區域放進 restaurantName。
+4. 如果使用者沒有提到資料來源，sourceType = "Neutral"，sourceReliability = 3。
+5. 如果提到朋友推薦，sourceType = "FriendRecommended"，sourceReliability = 4。
+6. 如果提到自己吃過，sourceType = "SelfVisited"，sourceReliability = 5。
+7. 如果提到 IG、短影音、社群看到，sourceType = "IGRecommended"，sourceReliability = 2。
+8. 如果提到客戶、商務場合，sourceType 可判斷為 "CustomerMeal" 或 "BusinessContact"。
+9. sourceType 只能是以下其中一個：
 Neutral, SelfVisited, FriendRecommended, IGRecommended, BlogRecommended, GoogleMapFound, CustomerMeal, BusinessContact, Other
-9. 回傳必須是有效 JSON，不要包含 markdown，不要加註解。
+10. 回傳必須是有效 JSON，不要包含 markdown，不要加註解。
 
 請只回傳以下 JSON 欄位：
 {
@@ -173,13 +174,21 @@ function normalizeParsedRestaurantInput(
   value: Record<string, unknown>,
   detectedGoogleMapsUrl: string,
 ): ParsedRestaurantInput {
+  const countryHint = toStringValue(value.countryHint);
+  const cityHint = toStringValue(value.cityHint);
+  const districtHint = toStringValue(value.districtHint);
+
   return {
-    cityHint: toStringValue(value.cityHint),
-    countryHint: toStringValue(value.countryHint),
-    districtHint: toStringValue(value.districtHint),
+    cityHint,
+    countryHint,
+    districtHint,
     googleMapsUrl:
       toStringValue(value.googleMapsUrl) || detectedGoogleMapsUrl || "",
-    restaurantName: toStringValue(value.restaurantName),
+    restaurantName: stripLocationPrefix(toStringValue(value.restaurantName), [
+      countryHint,
+      cityHint,
+      districtHint,
+    ]),
     sourceName: toStringValue(value.sourceName),
     sourceNote: toStringValue(value.sourceNote),
     sourceReliability: clampSourceReliability(value.sourceReliability),
@@ -187,6 +196,26 @@ function normalizeParsedRestaurantInput(
     suitableForHints: toStringArray(value.suitableForHints),
     tagHints: toStringArray(value.tagHints),
   };
+}
+
+function stripLocationPrefix(name: string, locationParts: string[]): string {
+  let cleanName = name.trim();
+  const orderedLocationParts = locationParts
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  for (const locationPart of orderedLocationParts) {
+    cleanName = cleanName
+      .replace(new RegExp(`^${escapeRegExp(locationPart)}[\\s,，、-]*`, "i"), "")
+      .trim();
+  }
+
+  return cleanName || name;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function toStringValue(value: unknown): string {
