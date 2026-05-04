@@ -255,6 +255,35 @@ function ResultCard({
 }) {
   const restaurant = selected.restaurant;
   const mapUrl = restaurant.mapUrl || restaurant.originalMapUrl;
+  const sourceDetails = compactStrings([
+    restaurant.sourceName,
+    restaurant.sourceNote,
+    restaurant.personalNote,
+  ]);
+  const detailLinks = [
+    restaurant.websiteUrl
+      ? { href: restaurant.websiteUrl, label: "官方網站" }
+      : null,
+    mapUrl ? { href: mapUrl, label: "Google Maps" } : null,
+    ...restaurant.sourceUrls.map((href, index) => ({
+      href,
+      label: `參考來源 ${index + 1}`,
+    })),
+  ].filter((link): link is { href: string; label: string } => Boolean(link));
+  const hasDetails =
+    Boolean(
+      restaurant.address ||
+        restaurant.phone ||
+        restaurant.openingHoursRaw ||
+        restaurant.nextOpenTime ||
+        restaurant.timezone ||
+        restaurant.lastAIUpdated,
+    ) ||
+    restaurant.mealTime.length > 0 ||
+    restaurant.suitableFor.length > 0 ||
+    restaurant.tags.length > 0 ||
+    sourceDetails.length > 0 ||
+    detailLinks.length > 0;
 
   return (
     <section className="rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
@@ -285,6 +314,40 @@ function ResultCard({
         <p className="mt-5 rounded-lg bg-stone-50 p-4 text-sm leading-6 text-stone-700">
           {restaurant.aiSummary}
         </p>
+      ) : null}
+
+      {hasDetails ? (
+        <div className="mt-5 space-y-4 rounded-lg border border-stone-200 p-4">
+          <h3 className="text-base font-bold text-stone-950">詳細資訊</h3>
+          <dl className="grid gap-3 text-sm leading-6 text-stone-700">
+            <DetailRow label="地址" value={restaurant.address} />
+            <DetailRow label="電話" value={restaurant.phone} />
+            <DetailRow label="營業時間" value={restaurant.openingHoursRaw} />
+            <DetailRow label="下次營業" value={restaurant.nextOpenTime} />
+            <DetailRow label="時區" value={restaurant.timezone} />
+            <DetailRow label="更新日期" value={restaurant.lastAIUpdated} />
+            <DetailList label="用餐時段" values={restaurant.mealTime} />
+            <DetailList label="適合情境" values={restaurant.suitableFor} />
+            <DetailList label="標籤" values={restaurant.tags} />
+            <DetailList label="附註" values={sourceDetails} />
+          </dl>
+
+          {detailLinks.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {detailLinks.map((link) => (
+                <a
+                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-900 transition hover:bg-stone-50"
+                  href={link.href}
+                  key={`${link.label}-${link.href}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -325,6 +388,50 @@ function ResultCard({
       </div>
     </section>
   );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string;
+}) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-1 sm:grid-cols-[7rem_1fr]">
+      <dt className="font-semibold text-stone-500">{label}</dt>
+      <dd className="font-medium text-stone-900">{value}</dd>
+    </div>
+  );
+}
+
+function DetailList({
+  label,
+  values,
+}: {
+  label: string;
+  values: string[];
+}) {
+  const visibleValues = values.filter(Boolean);
+
+  if (visibleValues.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-1 sm:grid-cols-[7rem_1fr]">
+      <dt className="font-semibold text-stone-500">{label}</dt>
+      <dd className="font-medium text-stone-900">{visibleValues.join("、")}</dd>
+    </div>
+  );
+}
+
+function compactStrings(values: Array<string | undefined>): string[] {
+  return values.filter((value): value is string => Boolean(value));
 }
 
 function TextField({
