@@ -27,6 +27,14 @@ export type RestaurantStatus = "Active" | "Pause" | "Blacklist";
 
 export type AIConfidence = "high" | "medium" | "low";
 
+export type LocationArea =
+  | "台中家附近"
+  | "汐止家附近"
+  | "公司附近"
+  | "台北市區"
+  | "台中市郊"
+  | "台北市郊";
+
 export interface OpeningHoursPeriod {
   open: string;
   close: string;
@@ -45,6 +53,7 @@ export interface Restaurant {
   country?: string;
   city?: string;
   district?: string;
+  locationAreas: LocationArea[];
   address?: string;
   latitude?: string;
   longitude?: string;

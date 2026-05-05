@@ -130,6 +130,7 @@ function RestaurantCard({
     .filter(Boolean)
     .join(" / ");
   const tags = restaurant.tags.slice(0, 4);
+  const locationAreas = restaurant.locationAreas.slice(0, 3);
 
   async function handleRefresh() {
     setIsRefreshing(true);
@@ -196,6 +197,11 @@ function RestaurantCard({
         {tags.map((tag) => (
           <StatusBadge key={tag} tone="neutral">
             {tag}
+          </StatusBadge>
+        ))}
+        {locationAreas.map((locationArea) => (
+          <StatusBadge key={locationArea} tone="good">
+            {locationArea}
           </StatusBadge>
         ))}
         <StatusBadge tone="neutral">

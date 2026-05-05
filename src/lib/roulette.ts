@@ -1,4 +1,5 @@
-import type { Restaurant } from "@/types/restaurant";
+import type { LocationArea, Restaurant } from "@/types/restaurant";
+import { restaurantMatchesLocationArea } from "@/lib/locationAreas";
 
 export interface RouletteFilters {
   allowLaterOpen?: boolean;
@@ -6,6 +7,7 @@ export interface RouletteFilters {
   city?: string;
   country?: string;
   district?: string;
+  locationArea: LocationArea;
   mealTime?: string;
   openNowOnly?: boolean;
   priceLevel?: string;
@@ -27,7 +29,9 @@ export function filterRestaurants(
   restaurants: Restaurant[],
   filters: RouletteFilters,
 ): Restaurant[] {
-  return restaurants.filter((restaurant) => isRestaurantAllowed(restaurant, filters));
+  return restaurants.filter((restaurant) =>
+    isRestaurantAllowed(restaurant, filters),
+  );
 }
 
 export function scoreRestaurant(
@@ -170,6 +174,10 @@ function isRestaurantAllowed(
   }
 
   if (restaurant.todayOpenStatus === "ClosedToday") {
+    return false;
+  }
+
+  if (!restaurantMatchesLocationArea(restaurant, filters.locationArea)) {
     return false;
   }
 

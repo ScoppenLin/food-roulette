@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { detectInputType, extractGoogleMapsUrl } from "@/lib/input";
+import { locationAreaOptions } from "@/lib/locationAreas";
 import type {
   EnrichedRestaurant,
   EnrichRestaurantResult,
+  LocationArea,
   ParsedRestaurantInput,
   Restaurant,
   RestaurantCandidate,
@@ -37,6 +39,7 @@ export function RestaurantInputForm() {
   const [savedRestaurant, setSavedRestaurant] = useState<Restaurant | null>(
     null,
   );
+  const [locationAreas, setLocationAreas] = useState<LocationArea[]>([]);
 
   const inputType = useMemo(() => detectInputType(inputText), [inputText]);
   const googleMapsUrl = useMemo(
@@ -45,7 +48,9 @@ export function RestaurantInputForm() {
   );
   const canAnalyze = inputText.trim().length > 0 && status !== "analyzing";
   const canSave =
-    Boolean(preview.enriched && preview.parsed) && status !== "saving";
+    Boolean(preview.enriched && preview.parsed) &&
+    locationAreas.length > 0 &&
+    status !== "saving";
 
   async function handleAnalyze() {
     if (!canAnalyze) {
@@ -112,6 +117,7 @@ export function RestaurantInputForm() {
         {
           enriched: preview.enriched,
           inputType,
+          locationAreas,
           originalInput: inputText,
           parsed: preview.parsed,
         },
@@ -130,6 +136,14 @@ export function RestaurantInputForm() {
     setErrorMessage("");
     setSavedRestaurant(null);
     setPreview({ candidates: [], enriched: null, parsed: null });
+  }
+
+  function toggleLocationArea(locationArea: LocationArea) {
+    setLocationAreas((currentAreas) =>
+      currentAreas.includes(locationArea)
+        ? currentAreas.filter((area) => area !== locationArea)
+        : [...currentAreas, locationArea],
+    );
   }
 
   return (
@@ -199,7 +213,9 @@ export function RestaurantInputForm() {
           }
           isSaved={status === "saved"}
           isSaving={status === "saving"}
+          locationAreas={locationAreas}
           onReset={handleReset}
+          onToggleLocationArea={toggleLocationArea}
           onSave={handleSave}
           onReanalyze={handleAnalyze}
           sourceReliability={preview.parsed.sourceReliability}
@@ -221,9 +237,11 @@ function PreviewCard({
   googleMapsUrl,
   isSaved,
   isSaving,
+  locationAreas,
   onReanalyze,
   onReset,
   onSave,
+  onToggleLocationArea,
   sourceReliability,
   sourceType,
 }: {
@@ -231,9 +249,11 @@ function PreviewCard({
   googleMapsUrl: string;
   isSaved: boolean;
   isSaving: boolean;
+  locationAreas: LocationArea[];
   onReanalyze: () => void;
   onReset: () => void;
   onSave: () => void;
+  onToggleLocationArea: (locationArea: LocationArea) => void;
   sourceReliability: number;
   sourceType: string;
 }) {
@@ -279,6 +299,34 @@ function PreviewCard({
           {enriched.aiSummary}
         </p>
       ) : null}
+
+      <section className="mt-5 rounded-lg border border-stone-200 p-4">
+        <h3 className="text-base font-bold text-stone-950">這家餐廳屬於哪裡？</h3>
+        <p className="mt-1 text-sm leading-6 text-stone-600">
+          至少選一個，輪盤會用這個做硬性篩選。
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {locationAreaOptions.map((locationArea) => (
+            <button
+              className={`min-h-11 rounded-lg border px-3 text-sm font-bold transition ${
+                locationAreas.includes(locationArea)
+                  ? "border-emerald-700 bg-emerald-700 text-white"
+                  : "border-stone-300 bg-white text-stone-950 hover:bg-stone-50"
+              }`}
+              key={locationArea}
+              onClick={() => onToggleLocationArea(locationArea)}
+              type="button"
+            >
+              {locationArea}
+            </button>
+          ))}
+        </div>
+        {locationAreas.length === 0 ? (
+          <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm font-semibold leading-6 text-amber-800">
+            請先選擇至少一個生活圈，才可以新增。
+          </p>
+        ) : null}
+      </section>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a

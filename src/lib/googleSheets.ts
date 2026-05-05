@@ -3,12 +3,14 @@ import type {
   AIConfidence,
   BusinessStatus,
   InputType,
+  LocationArea,
   Restaurant,
   RestaurantStatus,
   SourceType,
   TodayOpenStatus,
 } from "@/types/restaurant";
 import { joinCommaText, splitCommaText } from "@/lib/input";
+import { normalizeLocationAreas } from "@/lib/locationAreas";
 
 const SHEET_NAME = "Restaurants";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -65,6 +67,7 @@ export const restaurantSheetHeaders = [
   "LastAIUpdated",
   "CreatedAt",
   "UpdatedAt",
+  "LocationAreas",
 ] as const;
 
 type RestaurantSheetHeader = (typeof restaurantSheetHeaders)[number];
@@ -84,7 +87,7 @@ interface GoogleTokenResponse {
 let cachedToken: { accessToken: string; expiresAt: number } | null = null;
 
 export async function getRestaurants(): Promise<Restaurant[]> {
-  const values = await getSheetValues(`${SHEET_NAME}!A:AX`);
+  const values = await getSheetValues(`${SHEET_NAME}!A:AY`);
   const [headerRow, ...dataRows] = values;
 
   if (!headerRow) {
@@ -98,7 +101,7 @@ export async function getRestaurants(): Promise<Restaurant[]> {
 }
 
 export async function appendRestaurant(restaurant: Restaurant): Promise<void> {
-  await appendSheetValues(`${SHEET_NAME}!A:AX`, [
+  await appendSheetValues(`${SHEET_NAME}!A:AY`, [
     restaurantToSheetRow(restaurant),
   ]);
 }
@@ -107,7 +110,7 @@ export async function updateRestaurantRow(
   rowNumber: number,
   restaurant: Restaurant,
 ): Promise<void> {
-  await updateSheetValues(`${SHEET_NAME}!A${rowNumber}:AX${rowNumber}`, [
+  await updateSheetValues(`${SHEET_NAME}!A${rowNumber}:AY${rowNumber}`, [
     restaurantToSheetRow(restaurant),
   ]);
 }
@@ -324,6 +327,7 @@ function sheetRowToRestaurant(row: SheetRow): Restaurant {
     lastVisited: emptyToUndefined(row.LastVisited),
     latitude: emptyToUndefined(row.Latitude),
     longitude: emptyToUndefined(row.Longitude),
+    locationAreas: toLocationAreas(row.LocationAreas),
     mapUrl: emptyToUndefined(row.MapURL),
     mealTime: splitCommaText(row.MealTime),
     mustTry: toBoolean(row.MustTry),
@@ -406,6 +410,7 @@ function restaurantToSheetRow(restaurant: Restaurant): string[] {
     restaurant.lastAIUpdated ?? "",
     restaurant.createdAt,
     restaurant.updatedAt,
+    joinCommaText(restaurant.locationAreas),
   ];
 }
 
@@ -457,6 +462,10 @@ function parseSourceUrls(value: string): string[] {
   } catch {
     return splitCommaText(value);
   }
+}
+
+function toLocationAreas(value: string): LocationArea[] {
+  return normalizeLocationAreas(splitCommaText(value));
 }
 
 function toInputType(value: string): InputType {

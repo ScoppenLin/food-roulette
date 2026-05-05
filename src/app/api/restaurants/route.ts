@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appendRestaurant, getRestaurants } from "@/lib/googleSheets";
+import { normalizeLocationAreas } from "@/lib/locationAreas";
 import type {
   EnrichedRestaurant,
   InputType,
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       enriched?: unknown;
       inputType?: unknown;
+      locationAreas?: unknown;
       originalInput?: unknown;
       parsed?: unknown;
     };
@@ -35,6 +37,9 @@ export async function POST(request: NextRequest) {
     const enriched = normalizeEnrichedRestaurant(body.enriched);
     const originalInput = toStringValue(body.originalInput);
     const inputType = normalizeInputType(body.inputType);
+    const locationAreas = normalizeLocationAreas(
+      toStringArray(body.locationAreas),
+    );
 
     if (!enriched.name && !parsed.restaurantName) {
       return NextResponse.json(
@@ -68,6 +73,7 @@ export async function POST(request: NextRequest) {
       lastAIUpdated: now,
       latitude: enriched.latitude || undefined,
       longitude: enriched.longitude || undefined,
+      locationAreas,
       mapUrl: enriched.mapUrl || parsed.googleMapsUrl || undefined,
       mealTime: enriched.mealTime,
       mustTry: false,

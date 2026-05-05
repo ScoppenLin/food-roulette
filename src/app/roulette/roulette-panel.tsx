@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  defaultLocationArea,
+  isLocationArea,
+  locationAreaOptions,
+} from "@/lib/locationAreas";
+import type { LocationArea } from "@/types/restaurant";
 import type { Restaurant } from "@/types/restaurant";
 
 interface RouletteFormState {
@@ -9,6 +15,7 @@ interface RouletteFormState {
   city: string;
   country: string;
   district: string;
+  locationArea: LocationArea;
   mealTime: string;
   openNowOnly: boolean;
   priceLevel: string;
@@ -33,6 +40,7 @@ const initialFormState: RouletteFormState = {
   city: "",
   country: "",
   district: "",
+  locationArea: defaultLocationArea,
   mealTime: "",
   openNowOnly: false,
   priceLevel: "",
@@ -51,6 +59,24 @@ export function RoulettePanel() {
 
   const isBusy = status === "picking" || status === "saving";
 
+  useEffect(() => {
+    const savedLocationArea = window.localStorage.getItem(
+      "food-roulette-location-area",
+    );
+
+    if (savedLocationArea && isLocationArea(savedLocationArea)) {
+      setFormState((state) => ({
+        ...state,
+        locationArea: savedLocationArea,
+      }));
+    }
+  }, []);
+
+  function updateLocationArea(locationArea: LocationArea) {
+    setFormState((state) => ({ ...state, locationArea }));
+    window.localStorage.setItem("food-roulette-location-area", locationArea);
+  }
+
   async function handlePick() {
     setStatus("picking");
     setMessage("");
@@ -62,6 +88,7 @@ export function RoulettePanel() {
         city: formState.city,
         country: formState.country,
         district: formState.district,
+        locationArea: formState.locationArea,
         mealTime: formState.mealTime,
         openNowOnly: formState.openNowOnly,
         priceLevel: formState.priceLevel,
@@ -119,6 +146,26 @@ export function RoulettePanel() {
 
   return (
     <div className="space-y-5">
+      <section className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-bold text-stone-950">你現在在哪裡？</h2>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {locationAreaOptions.map((locationArea) => (
+            <button
+              className={`min-h-12 rounded-lg border px-4 text-base font-bold transition ${
+                formState.locationArea === locationArea
+                  ? "border-emerald-700 bg-emerald-700 text-white"
+                  : "border-stone-300 bg-white text-stone-950 hover:bg-stone-50"
+              }`}
+              key={locationArea}
+              onClick={() => updateLocationArea(locationArea)}
+              type="button"
+            >
+              {locationArea}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <button
         className="min-h-16 w-full rounded-lg bg-emerald-700 px-5 text-xl font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
         disabled={isBusy}
