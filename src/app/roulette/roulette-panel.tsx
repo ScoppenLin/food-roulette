@@ -44,7 +44,6 @@ export function RoulettePanel() {
   const [formState, setFormState] =
     useState<RouletteFormState>(initialFormState);
   const [selected, setSelected] = useState<ScoredRestaurant | null>(null);
-  const [candidateCount, setCandidateCount] = useState(0);
   const [status, setStatus] = useState<
     "idle" | "picking" | "picked" | "saving" | "saved" | "error"
   >("idle");
@@ -70,7 +69,6 @@ export function RoulettePanel() {
         wantTags: formState.wantTags,
       });
 
-      setCandidateCount(result.candidates.length);
       setSelected(result.selected);
       setStatus(result.selected ? "picked" : "idle");
       setMessage(result.selected ? "" : "目前沒有符合條件的餐廳。");
@@ -226,7 +224,6 @@ export function RoulettePanel() {
 
       {selected ? (
         <ResultCard
-          candidateCount={candidateCount}
           isBusy={isBusy}
           onPick={handlePick}
           onReject={handleReject}
@@ -239,14 +236,12 @@ export function RoulettePanel() {
 }
 
 function ResultCard({
-  candidateCount,
   isBusy,
   onPick,
   onReject,
   onVisit,
   selected,
 }: {
-  candidateCount: number;
   isBusy: boolean;
   onPick: () => void;
   onReject: () => void;
@@ -255,8 +250,18 @@ function ResultCard({
 }) {
   const restaurant = selected.restaurant;
   const mapUrl = restaurant.mapUrl || restaurant.originalMapUrl;
+  const location = compactStrings([
+    restaurant.country,
+    restaurant.city,
+    restaurant.district,
+  ]).join(" · ");
+  const headlineFacts = compactStrings([
+    restaurant.cuisine,
+    restaurant.priceLevel,
+    location,
+  ]);
+  const openStatus = formatOpenStatus(restaurant);
   const sourceDetails = compactStrings([
-    restaurant.sourceName,
     restaurant.sourceNote,
     restaurant.personalNote,
   ]);
@@ -265,19 +270,13 @@ function ResultCard({
       ? { href: restaurant.websiteUrl, label: "官方網站" }
       : null,
     mapUrl ? { href: mapUrl, label: "Google Maps" } : null,
-    ...restaurant.sourceUrls.map((href, index) => ({
-      href,
-      label: `參考來源 ${index + 1}`,
-    })),
   ].filter((link): link is { href: string; label: string } => Boolean(link));
   const hasDetails =
     Boolean(
       restaurant.address ||
         restaurant.phone ||
         restaurant.openingHoursRaw ||
-        restaurant.nextOpenTime ||
-        restaurant.timezone ||
-        restaurant.lastAIUpdated,
+        restaurant.nextOpenTime,
     ) ||
     restaurant.mealTime.length > 0 ||
     restaurant.suitableFor.length > 0 ||
@@ -286,107 +285,110 @@ function ResultCard({
     detailLinks.length > 0;
 
   return (
-    <section className="rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold text-emerald-700">今天推薦你吃</p>
-      <h2 className="mt-2 text-3xl font-bold text-stone-950">
-        {restaurant.name}
-      </h2>
-      <p className="mt-2 leading-7 text-stone-600">
-        {[restaurant.cuisine, restaurant.priceLevel, restaurant.city]
-          .filter(Boolean)
-          .join(" / ") || "餐廳資料待補"}
-      </p>
-
-      <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-        <ResultItem label="推薦分數" value={`${selected.score}`} />
-        <ResultItem label="候選餐廳" value={`${candidateCount} 家`} />
-        <ResultItem
-          label="營業狀態"
-          value={`${restaurant.businessStatus} / ${restaurant.todayOpenStatus}`}
-        />
-        <ResultItem
-          label="資料來源"
-          value={`${restaurant.sourceType} ${restaurant.sourceReliability}/5`}
-        />
-      </dl>
-
-      {restaurant.aiSummary ? (
-        <p className="mt-5 rounded-lg bg-stone-50 p-4 text-sm leading-6 text-stone-700">
-          {restaurant.aiSummary}
-        </p>
-      ) : null}
-
-      {hasDetails ? (
-        <div className="mt-5 space-y-4 rounded-lg border border-stone-200 p-4">
-          <h3 className="text-base font-bold text-stone-950">詳細資訊</h3>
-          <dl className="grid gap-3 text-sm leading-6 text-stone-700">
-            <DetailRow label="地址" value={restaurant.address} />
-            <DetailRow label="電話" value={restaurant.phone} />
-            <DetailRow label="營業時間" value={restaurant.openingHoursRaw} />
-            <DetailRow label="下次營業" value={restaurant.nextOpenTime} />
-            <DetailRow label="時區" value={restaurant.timezone} />
-            <DetailRow label="更新日期" value={restaurant.lastAIUpdated} />
-            <DetailList label="用餐時段" values={restaurant.mealTime} />
-            <DetailList label="適合情境" values={restaurant.suitableFor} />
-            <DetailList label="標籤" values={restaurant.tags} />
-            <DetailList label="附註" values={sourceDetails} />
-          </dl>
-
-          {detailLinks.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {detailLinks.map((link) => (
-                <a
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-900 transition hover:bg-stone-50"
-                  href={link.href}
-                  key={`${link.label}-${link.href}`}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <button
-          className="min-h-12 flex-1 rounded-lg bg-emerald-700 px-4 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
-          disabled={isBusy}
-          onClick={onVisit}
-          type="button"
-        >
-          今天吃這家
-        </button>
-        <button
-          className="min-h-12 flex-1 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
-          disabled={isBusy}
-          onClick={onReject}
-          type="button"
-        >
-          重新抽，不要這家
-        </button>
-        <button
-          className="min-h-12 flex-1 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
-          disabled={isBusy}
-          onClick={onPick}
-          type="button"
-        >
-          再抽一次
-        </button>
-        {mapUrl ? (
-          <a
-            className="flex min-h-12 flex-1 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50"
-            href={mapUrl}
-            rel="noreferrer"
-            target="_blank"
-          >
-            Google Maps
-          </a>
+    <section className="overflow-hidden rounded-lg border border-emerald-200 bg-white shadow-sm">
+      <div className="space-y-4 bg-emerald-700 p-6 text-white">
+        <p className="text-base font-semibold text-emerald-50">今天推薦你吃</p>
+        <h2 className="text-4xl font-bold leading-tight tracking-normal">
+          {restaurant.name}
+        </h2>
+        {headlineFacts.length > 0 ? (
+          <p className="text-lg font-medium leading-8 text-emerald-50">
+            {headlineFacts.join(" / ")}
+          </p>
         ) : null}
       </div>
+
+      <div className="space-y-5 p-5 sm:p-6">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <HighlightItem label="營業狀態" value={openStatus} />
+          {restaurant.address ? (
+            <HighlightItem label="位置" value={restaurant.address} />
+          ) : location ? (
+            <HighlightItem label="位置" value={location} />
+          ) : null}
+        </div>
+
+        {restaurant.aiSummary ? (
+          <section className="rounded-lg bg-stone-50 p-4">
+            <h3 className="text-lg font-bold text-stone-950">推薦理由</h3>
+            <p className="mt-2 text-base leading-8 text-stone-700">
+              {restaurant.aiSummary}
+            </p>
+          </section>
+        ) : null}
+
+        {hasDetails ? (
+          <section className="space-y-4 rounded-lg border border-stone-200 p-4">
+            <h3 className="text-lg font-bold text-stone-950">你會用到的資訊</h3>
+            <dl className="grid gap-4 text-base leading-7 text-stone-700">
+              <DetailRow label="營業時間" value={restaurant.openingHoursRaw} />
+              <DetailRow label="下次營業" value={restaurant.nextOpenTime} />
+              <DetailRow label="電話" value={restaurant.phone} />
+              <DetailList label="適合" values={restaurant.suitableFor} />
+              <DetailList label="時段" values={restaurant.mealTime} />
+              <DetailList label="特色" values={restaurant.tags.slice(0, 6)} />
+              <DetailList label="附註" values={sourceDetails} />
+            </dl>
+
+            {detailLinks.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {detailLinks.map((link) => (
+                  <a
+                    className="flex min-h-12 items-center justify-center rounded-lg border border-stone-300 px-4 text-base font-bold text-stone-900 transition hover:bg-stone-50"
+                    href={link.href}
+                    key={`${link.label}-${link.href}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        <div className="grid gap-3">
+          <button
+            className="min-h-14 rounded-lg bg-emerald-700 px-5 text-lg font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
+            disabled={isBusy}
+            onClick={onVisit}
+            type="button"
+          >
+            今天吃這家
+          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              className="min-h-12 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
+              disabled={isBusy}
+              onClick={onPick}
+              type="button"
+            >
+              再抽一次
+            </button>
+            <button
+              className="min-h-12 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
+              disabled={isBusy}
+              onClick={onReject}
+              type="button"
+            >
+              不想吃這家
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
+  );
+}
+
+function HighlightItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-stone-50 p-4">
+      <dt className="text-sm font-bold text-stone-500">{label}</dt>
+      <dd className="mt-1 text-lg font-bold leading-7 text-stone-950">
+        {value}
+      </dd>
+    </div>
   );
 }
 
@@ -434,6 +436,27 @@ function compactStrings(values: Array<string | undefined>): string[] {
   return values.filter((value): value is string => Boolean(value));
 }
 
+function formatOpenStatus(restaurant: Restaurant): string {
+  if (restaurant.businessStatus === "PermanentlyClosed") {
+    return "已歇業";
+  }
+
+  if (restaurant.businessStatus === "TemporarilyClosed") {
+    return "暫時休息";
+  }
+
+  switch (restaurant.todayOpenStatus) {
+    case "OpenNow":
+      return "現在有營業";
+    case "ClosedNow":
+      return "現在未營業";
+    case "ClosedToday":
+      return "今天休息";
+    case "Unknown":
+      return "營業狀態待確認";
+  }
+}
+
 function TextField({
   label,
   onChange,
@@ -477,17 +500,6 @@ function CheckField({
       />
       {label}
     </label>
-  );
-}
-
-function ResultItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-stone-50 p-4">
-      <dt className="text-sm font-semibold text-stone-500">{label}</dt>
-      <dd className="mt-1 text-base font-semibold leading-7 text-stone-900">
-        {value}
-      </dd>
-    </div>
   );
 }
 

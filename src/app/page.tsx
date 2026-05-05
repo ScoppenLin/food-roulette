@@ -18,25 +18,27 @@ export default function Home() {
           </p>
         </div>
 
-        <nav className="grid gap-3 text-lg font-semibold sm:grid-cols-3">
+        <nav className="grid gap-3 font-semibold">
           <Link
-            className="flex min-h-16 items-center justify-center rounded-lg bg-stone-950 px-5 text-white shadow-sm transition hover:bg-stone-800"
-            href="/add"
-          >
-            新增餐廳
-          </Link>
-          <Link
-            className="flex min-h-16 items-center justify-center rounded-lg bg-emerald-700 px-5 text-white shadow-sm transition hover:bg-emerald-800"
+            className="flex min-h-24 items-center justify-center rounded-lg bg-emerald-700 px-6 text-2xl text-white shadow-sm transition hover:bg-emerald-800"
             href="/roulette"
           >
             開始輪盤
           </Link>
-          <Link
-            className="flex min-h-16 items-center justify-center rounded-lg border border-stone-300 bg-white px-5 text-stone-950 shadow-sm transition hover:bg-stone-50"
-            href="/restaurants"
-          >
-            查看餐廳清單
-          </Link>
+          <div className="grid gap-3 text-base sm:grid-cols-2">
+            <Link
+              className="flex min-h-14 items-center justify-center rounded-lg border border-stone-300 bg-white px-5 text-stone-950 shadow-sm transition hover:bg-stone-50"
+              href="/add"
+            >
+              新增餐廳
+            </Link>
+            <Link
+              className="flex min-h-14 items-center justify-center rounded-lg border border-stone-300 bg-white px-5 text-stone-950 shadow-sm transition hover:bg-stone-50"
+              href="/restaurants"
+            >
+              餐廳清單
+            </Link>
+          </div>
         </nav>
       </section>
     </main>
