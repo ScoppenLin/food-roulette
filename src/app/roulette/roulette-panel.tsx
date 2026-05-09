@@ -146,12 +146,28 @@ export function RoulettePanel() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-bold text-stone-950">你現在在哪裡？</h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <button
+        className="min-h-32 w-full rounded-lg bg-emerald-700 px-6 text-3xl font-black leading-tight text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-400 sm:min-h-36 sm:text-4xl"
+        disabled={isBusy}
+        onClick={handlePick}
+        type="button"
+      >
+        {status === "picking" ? "正在抽..." : "今天吃什麼？"}
+      </button>
+
+      {status === "picking" ? <PickingAnimation /> : null}
+
+      <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-stone-950">現在的位置</h2>
+          <span className="text-sm font-semibold text-emerald-700">
+            {formState.locationArea}
+          </span>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {locationAreaOptions.map((locationArea) => (
             <button
-              className={`min-h-12 rounded-lg border px-4 text-base font-bold transition ${
+              className={`min-h-11 rounded-lg border px-3 text-sm font-bold transition ${
                 formState.locationArea === locationArea
                   ? "border-emerald-700 bg-emerald-700 text-white"
                   : "border-stone-300 bg-white text-stone-950 hover:bg-stone-50"
@@ -165,15 +181,6 @@ export function RoulettePanel() {
           ))}
         </div>
       </section>
-
-      <button
-        className="min-h-16 w-full rounded-lg bg-emerald-700 px-5 text-xl font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
-        disabled={isBusy}
-        onClick={handlePick}
-        type="button"
-      >
-        {status === "picking" ? "抽選中..." : "今天吃什麼？"}
-      </button>
 
       <details className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
         <summary className="cursor-pointer text-base font-bold text-stone-900">
@@ -279,6 +286,43 @@ export function RoulettePanel() {
         />
       ) : null}
     </div>
+  );
+}
+
+function PickingAnimation() {
+  const cards = ["料理類型", "營業狀態", "距離", "心情", "價位"];
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
+        <div className="food-wheel relative size-40 shrink-0 rounded-full border-8 border-white shadow-[0_18px_45px_rgba(20,83,45,0.16)]">
+          <div className="absolute left-1/2 top-[-0.55rem] h-0 w-0 -translate-x-1/2 border-x-[0.65rem] border-t-[1.2rem] border-x-transparent border-t-stone-950" />
+          <div className="absolute inset-10 rounded-full border-4 border-white bg-stone-950 shadow-inner" />
+          <div className="absolute inset-[4.4rem] rounded-full bg-white" />
+        </div>
+
+        <div className="w-full space-y-4">
+          <div>
+            <p className="text-sm font-bold text-emerald-700">正在幫你篩選</p>
+            <p className="mt-1 text-lg font-black text-stone-950">
+              讓命運轉一下，順便排除不合理的選項。
+            </p>
+          </div>
+          <div className="shuffle-stage relative h-24 overflow-hidden">
+            {cards.map((card, index) => (
+              <div
+                className="shuffle-card absolute left-0 top-2 flex min-h-16 w-full items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-4 text-base font-bold text-stone-900 shadow-sm"
+                key={card}
+                style={{ animationDelay: `${index * 0.16}s` }}
+              >
+                <span>{card}</span>
+                <span className="text-emerald-700">檢查中</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
