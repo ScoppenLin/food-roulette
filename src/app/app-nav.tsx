@@ -12,12 +12,6 @@ export function AppNav() {
         </Link>
         <div className="flex items-center gap-2 text-sm font-bold">
           <Link
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-950 shadow-sm transition hover:bg-stone-50"
-            href="/"
-          >
-            抽餐廳
-          </Link>
-          <Link
             className="rounded-lg bg-emerald-700 px-3 py-2 text-white shadow-sm transition hover:bg-emerald-800"
             href="/add"
           >
