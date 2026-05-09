@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   defaultLocationArea,
   isLocationArea,
   locationAreaOptions,
 } from "@/lib/locationAreas";
-import type { LocationArea } from "@/types/restaurant";
-import type { Restaurant } from "@/types/restaurant";
+import type { LocationArea, Restaurant } from "@/types/restaurant";
 
 interface RouletteFormState {
   allowLaterOpen: boolean;
@@ -57,7 +55,6 @@ export function RoulettePanel() {
     "idle",
   );
   const [message, setMessage] = useState("");
-
   const isBusy = status === "picking";
 
   useEffect(() => {
@@ -66,10 +63,7 @@ export function RoulettePanel() {
     );
 
     if (savedLocationArea && isLocationArea(savedLocationArea)) {
-      setFormState((state) => ({
-        ...state,
-        locationArea: savedLocationArea,
-      }));
+      setFormState((state) => ({ ...state, locationArea: savedLocationArea }));
     }
   }, []);
 
@@ -152,87 +146,19 @@ export function RoulettePanel() {
         <summary className="cursor-pointer text-base font-bold text-stone-900">
           可選條件
         </summary>
-
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <TextField
-            label="國家"
-            onChange={(country) =>
-              setFormState((state) => ({ ...state, country }))
-            }
-            placeholder="例如：日本"
-            value={formState.country}
-          />
-          <TextField
-            label="城市"
-            onChange={(city) => setFormState((state) => ({ ...state, city }))}
-            placeholder="例如：東京"
-            value={formState.city}
-          />
-          <TextField
-            label="區域"
-            onChange={(district) =>
-              setFormState((state) => ({ ...state, district }))
-            }
-            placeholder="例如：銀座"
-            value={formState.district}
-          />
-          <TextField
-            label="用餐時段"
-            onChange={(mealTime) =>
-              setFormState((state) => ({ ...state, mealTime }))
-            }
-            placeholder="早餐、午餐、晚餐、宵夜"
-            value={formState.mealTime}
-          />
-          <TextField
-            label="今天想吃的類型"
-            onChange={(wantTags) =>
-              setFormState((state) => ({ ...state, wantTags }))
-            }
-            placeholder="例如：壽司, 商務晚餐"
-            value={formState.wantTags}
-          />
-          <TextField
-            label="今天不想吃的類型"
-            onChange={(avoidTags) =>
-              setFormState((state) => ({ ...state, avoidTags }))
-            }
-            placeholder="例如：拉麵, 辣"
-            value={formState.avoidTags}
-          />
-          <TextField
-            label="價位"
-            onChange={(priceLevel) =>
-              setFormState((state) => ({ ...state, priceLevel }))
-            }
-            placeholder="$、$$、$$$、$$$$"
-            value={formState.priceLevel}
-          />
-          <TextField
-            label="情境"
-            onChange={(scenario) =>
-              setFormState((state) => ({ ...state, scenario }))
-            }
-            placeholder="例如：商務、約會、朋友聚餐"
-            value={formState.scenario}
-          />
+          <TextField label="國家" onChange={(country) => setFormState((state) => ({ ...state, country }))} placeholder="例如：日本" value={formState.country} />
+          <TextField label="城市" onChange={(city) => setFormState((state) => ({ ...state, city }))} placeholder="例如：東京" value={formState.city} />
+          <TextField label="區域" onChange={(district) => setFormState((state) => ({ ...state, district }))} placeholder="例如：銀座" value={formState.district} />
+          <TextField label="用餐時段" onChange={(mealTime) => setFormState((state) => ({ ...state, mealTime }))} placeholder="早餐、午餐、晚餐、宵夜" value={formState.mealTime} />
+          <TextField label="今天想吃的類型" onChange={(wantTags) => setFormState((state) => ({ ...state, wantTags }))} placeholder="例如：壽司, 商務晚餐" value={formState.wantTags} />
+          <TextField label="今天不想吃的類型" onChange={(avoidTags) => setFormState((state) => ({ ...state, avoidTags }))} placeholder="例如：拉麵, 辣" value={formState.avoidTags} />
+          <TextField label="價位" onChange={(priceLevel) => setFormState((state) => ({ ...state, priceLevel }))} placeholder="$、$$、$$$、$$$$" value={formState.priceLevel} />
+          <TextField label="情境" onChange={(scenario) => setFormState((state) => ({ ...state, scenario }))} placeholder="例如：商務、約會、朋友聚餐" value={formState.scenario} />
         </div>
-
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <CheckField
-            checked={formState.openNowOnly}
-            label="只抽目前有營業"
-            onChange={(openNowOnly) =>
-              setFormState((state) => ({ ...state, openNowOnly }))
-            }
-          />
-          <CheckField
-            checked={formState.allowLaterOpen}
-            label="允許稍晚營業"
-            onChange={(allowLaterOpen) =>
-              setFormState((state) => ({ ...state, allowLaterOpen }))
-            }
-          />
+          <CheckField checked={formState.openNowOnly} label="只抽目前有營業" onChange={(openNowOnly) => setFormState((state) => ({ ...state, openNowOnly }))} />
+          <CheckField checked={formState.allowLaterOpen} label="允許稍晚營業" onChange={(allowLaterOpen) => setFormState((state) => ({ ...state, allowLaterOpen }))} />
         </div>
       </details>
 
@@ -256,7 +182,6 @@ function PickingAnimation() {
           <div className="absolute inset-10 rounded-full border-4 border-white bg-stone-950 shadow-inner" />
           <div className="absolute inset-[4.4rem] rounded-full bg-white" />
         </div>
-
         <div className="w-full space-y-4">
           <div>
             <p className="text-sm font-bold text-emerald-700">正在幫你篩選</p>
@@ -309,9 +234,7 @@ function ResultCard({
     restaurant.personalNote,
   ]);
   const detailLinks = [
-    restaurant.websiteUrl
-      ? { href: restaurant.websiteUrl, label: "官方網站" }
-      : null,
+    restaurant.websiteUrl ? { href: restaurant.websiteUrl, label: "官方網站" } : null,
     mapUrl ? { href: mapUrl, label: "Google Maps" } : null,
   ].filter((link): link is { href: string; label: string } => Boolean(link));
   const hasDetails =
@@ -391,22 +314,14 @@ function ResultCard({
           </section>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <button
-            className="min-h-14 rounded-lg bg-emerald-700 px-5 text-lg font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
-            disabled={isBusy}
-            onClick={onPick}
-            type="button"
-          >
-            再抽一次
-          </button>
-          <Link
-            className="flex min-h-12 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
-            href="/add"
-          >
-            新增餐廳
-          </Link>
-        </div>
+        <button
+          className="min-h-14 w-full rounded-lg bg-emerald-700 px-5 text-lg font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
+          disabled={isBusy}
+          onClick={onPick}
+          type="button"
+        >
+          再抽一次
+        </button>
       </div>
     </section>
   );
@@ -423,13 +338,7 @@ function HighlightItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string;
-}) {
+function DetailRow({ label, value }: { label: string; value?: string }) {
   if (!value) {
     return null;
   }
@@ -442,13 +351,7 @@ function DetailRow({
   );
 }
 
-function DetailList({
-  label,
-  values,
-}: {
-  label: string;
-  values: string[];
-}) {
+function DetailList({ label, values }: { label: string; values: string[] }) {
   const visibleValues = values.filter(Boolean);
 
   if (visibleValues.length === 0) {
