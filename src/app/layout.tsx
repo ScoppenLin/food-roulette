@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AppNav } from "./app-nav";
 import { PwaRegister } from "./pwa-register";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant" className="h-full antialiased">
       <body className="min-h-full bg-[#f7f4ef] text-stone-950">
+        <AppNav />
         {children}
         <PwaRegister />
       </body>
