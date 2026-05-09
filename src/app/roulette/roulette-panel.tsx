@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   defaultLocationArea,
@@ -52,12 +53,12 @@ export function RoulettePanel() {
   const [formState, setFormState] =
     useState<RouletteFormState>(initialFormState);
   const [selected, setSelected] = useState<ScoredRestaurant | null>(null);
-  const [status, setStatus] = useState<
-    "idle" | "picking" | "picked" | "saving" | "saved" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "picking" | "picked" | "error">(
+    "idle",
+  );
   const [message, setMessage] = useState("");
 
-  const isBusy = status === "picking" || status === "saving";
+  const isBusy = status === "picking";
 
   useEffect(() => {
     const savedLocationArea = window.localStorage.getItem(
@@ -105,55 +106,20 @@ export function RoulettePanel() {
     }
   }
 
-  async function handleVisit() {
-    if (!selected) {
-      return;
-    }
-
-    setStatus("saving");
-    setMessage("");
-
-    try {
-      await postJson("/api/visit", {
-        restaurantId: selected.restaurant.id,
-      });
-      setStatus("saved");
-      setMessage(`已記錄今天吃：${selected.restaurant.name}`);
-    } catch (error) {
-      setMessage(formatError(error));
-      setStatus("error");
-    }
-  }
-
-  async function handleReject() {
-    if (!selected) {
-      return;
-    }
-
-    setStatus("saving");
-    setMessage("");
-
-    try {
-      await postJson("/api/reject", {
-        restaurantId: selected.restaurant.id,
-      });
-      await handlePick();
-    } catch (error) {
-      setMessage(formatError(error));
-      setStatus("error");
-    }
-  }
-
   return (
     <div className="space-y-5">
-      <button
-        className="min-h-32 w-full rounded-lg bg-emerald-700 px-6 text-3xl font-black leading-tight text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-400 sm:min-h-36 sm:text-4xl"
-        disabled={isBusy}
-        onClick={handlePick}
-        type="button"
-      >
-        {status === "picking" ? "正在抽..." : "今天吃什麼？"}
-      </button>
+      {selected ? (
+        <ResultCard isBusy={isBusy} onPick={handlePick} selected={selected} />
+      ) : (
+        <button
+          className="min-h-32 w-full rounded-lg bg-emerald-700 px-6 text-3xl font-black leading-tight text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-400 sm:min-h-36 sm:text-4xl"
+          disabled={isBusy}
+          onClick={handlePick}
+          type="button"
+        >
+          {status === "picking" ? "正在抽..." : "今天吃什麼？"}
+        </button>
+      )}
 
       {status === "picking" ? <PickingAnimation /> : null}
 
@@ -275,16 +241,6 @@ export function RoulettePanel() {
           {message}
         </p>
       ) : null}
-
-      {selected ? (
-        <ResultCard
-          isBusy={isBusy}
-          onPick={handlePick}
-          onReject={handleReject}
-          onVisit={handleVisit}
-          selected={selected}
-        />
-      ) : null}
     </div>
   );
 }
@@ -329,14 +285,10 @@ function PickingAnimation() {
 function ResultCard({
   isBusy,
   onPick,
-  onReject,
-  onVisit,
   selected,
 }: {
   isBusy: boolean;
   onPick: () => void;
-  onReject: () => void;
-  onVisit: () => void;
   selected: ScoredRestaurant;
 }) {
   const restaurant = selected.restaurant;
@@ -439,33 +391,21 @@ function ResultCard({
           </section>
         ) : null}
 
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <button
             className="min-h-14 rounded-lg bg-emerald-700 px-5 text-lg font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
             disabled={isBusy}
-            onClick={onVisit}
+            onClick={onPick}
             type="button"
           >
-            今天吃這家
+            再抽一次
           </button>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              className="min-h-12 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
-              disabled={isBusy}
-              onClick={onPick}
-              type="button"
-            >
-              再抽一次
-            </button>
-            <button
-              className="min-h-12 rounded-lg border border-stone-300 bg-white px-4 font-semibold text-stone-950 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:bg-stone-100"
-              disabled={isBusy}
-              onClick={onReject}
-              type="button"
-            >
-              不想吃這家
-            </button>
-          </div>
+          <Link
+            className="flex min-h-12 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
+            href="/add"
+          >
+            新增餐廳
+          </Link>
         </div>
       </div>
     </section>
